@@ -12,197 +12,108 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
- */
-//A good 80% of this app is from the Android SDK home app sample
+*/
 package com.mikedg.android.glass.launchy;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
-//import com.google.android.glass.timeline.LiveCard;
-//import com.google.android.glass.timeline.TimelineManager;
-
-import com.google.android.glass.touchpad.Gesture;
-import com.google.android.glass.touchpad.GestureDetector;
 
 public class MainActivity extends Activity {
+    private static final float SWIPE_PX = 60f;
+    private static final float TAP_SLOP_PX = 24f;
 
-	private AppHelper mAppHelper;
+    private AppHelper appHelper;
+    private ListView list;
+    private float downX;
+    private float downY;
 
-	//fix navigation problem basing on XE22
-	private int getSelectedItemPosition=0;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-	GestureDetector mGestureDetector;
+        appHelper = new AppHelper(this);
+        appHelper.loadApplications(false);
+        appHelper.bindApplications();
+        appHelper.registerIntentReceivers();
 
+        list = findViewById(android.R.id.list);
+        list.setSelection(0);
+        list.requestFocus();
+        list.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                list.smoothScrollToPositionFromTop(position, 0);
+            }
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+    }
 
-		mAppHelper = new AppHelper(this);
-		mAppHelper.loadApplications(true);
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        return handleTouch(event) || super.dispatchTouchEvent(event);
+    }
 
-		mAppHelper.bindApplications();
-		mAppHelper.registerIntentReceivers();
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        return handleTouch(event) || super.onGenericMotionEvent(event);
+    }
 
-		// setupTestReceiver();
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
 
-		mGestureDetector = createGestureDetector(this);
+    private boolean handleTouch(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = event.getX();
+                downY = event.getY();
+                return true;
+            case MotionEvent.ACTION_UP:
+                float dx = event.getX() - downX;
+                float dy = event.getY() - downY;
+                if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(dy)) {
+                    moveSelection(dx > 0 ? 1 : -1);
+                } else if (dy > SWIPE_PX && Math.abs(dy) > Math.abs(dx)) {
+                    finish();
+                } else if (Math.hypot(dx, dy) <= TAP_SLOP_PX) {
+                    launchSelection();
+                }
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                return true;
+            default:
+                return false;
+        }
+    }
 
-		final ListView list = (ListView) findViewById(android.R.id.list);
-		list.setSelection(0);
-		list.requestFocus();
-		list.setOnItemSelectedListener(new OnItemSelectedListener() {
+    private void moveSelection(int delta) {
+        int count = list.getAdapter().getCount() - 1;
+        if (count <= 0) return;
+        int current = Math.max(0, list.getSelectedItemPosition());
+        list.setSelection(Math.max(0, Math.min(count - 1, current + delta)));
+    }
 
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				list.smoothScrollToPositionFromTop(list.getSelectedItemPosition(), 0);
-			}
+    private void launchSelection() {
+        int position = Math.max(0, list.getSelectedItemPosition());
+        list.performItemClick(list.getSelectedView(), position, list.getItemIdAtPosition(position));
+    }
 
-			@Override
-			public void onNothingSelected(AdapterView<?> arg0) {
-
-			}
-		});
-
-		IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
-		intentFilter.addDataScheme("package");
-		registerReceiver(mPackageBroadcastReciever, intentFilter);
-
-		//        publishCard(this);
-	}
-
-	private GestureDetector createGestureDetector(Context context) {
-		GestureDetector gestureDetector = new GestureDetector(context);
-		//Create a base listener for generic gestures
-		gestureDetector.setBaseListener( new GestureDetector.BaseListener() {
-			@Override
-			public boolean onGesture(Gesture gesture) {
-				final ListView list = (ListView) findViewById(android.R.id.list);
-
-				if(getSelectedItemPosition<0 &&list.getSelectedItemPosition()<=-1){
-					getSelectedItemPosition=0;
-				}
-
-				System.out.println("onGesture:" + getSelectedItemPosition);
-
-				if (gesture == Gesture.TAP) { // On Tap, generate a new number
-					System.out.println("TAP");
-					ApplicationInfo app = (ApplicationInfo) list.getItemAtPosition(getSelectedItemPosition);
-					startActivity(app.intent);
-					return true;
-				} else if (gesture == Gesture.SWIPE_RIGHT) {
-					// do something on right (forward) swipe
-					System.out.println("SWIPE_RIGHT");
-					list.setSelection(getSelectedItemPosition+1);
-					getSelectedItemPosition+=1;
-					return true;
-				} else if (gesture == Gesture.SWIPE_LEFT) {
-					// do something on left (backwards) swipe
-					System.out.println("SWIPE_LEFT");
-					list.setSelection(getSelectedItemPosition-1);
-					getSelectedItemPosition-=1;
-					return true;
-				}
-				return false;
-			}
-		});
-
-		return gestureDetector;
-	}
-
-	// this method is required for tap on touchpad to work!
-	public boolean onGenericMotionEvent(MotionEvent event) {
-		if (mGestureDetector != null) {
-			return mGestureDetector.onMotionEvent(event);
-		}
-		return false;
-	}        	
-
-
-
-
-	// Cached instance of the LiveCard created by the publishCard() method.
-	//    private LiveCard mLiveCard;
-
-	//    private void publishCard(Context context) {
-	//        if (mLiveCard == null) {
-	//            String cardId = "my_card";
-	//            TimelineManager tm = TimelineManager.from(context);
-	//            mLiveCard = tm.getLiveCard(cardId);
-	//
-	//            mLiveCard.setViews(new RemoteViews(context.getPackageName(),
-	//                    R.layout.activity_main));
-	//            Intent intent = new Intent(context, MainActivity.class);
-	//            mLiveCard.setAction(PendingIntent.getActivity(context, 0,
-	//                    intent, 0));
-	//
-	////          if you want Glass to automatically display the live card after publishing, call setNonSilent(boolean) before publish().
-	//            mLiveCard.setNonSilent(true);
-	//
-	//            mLiveCard.publish();
-	//
-	//        } else {
-	//            // Card is already published.
-	//
-	//            return;
-	//        }
-	//    }
-	//
-	//    private void unpublishCard(Context context) {
-	//        if (mLiveCard != null) {
-	//            mLiveCard.unpublish();
-	//            mLiveCard = null;
-	//        }
-	//    }
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		mAppHelper.onDestroy();
-		unregisterReceiver(mPackageBroadcastReciever);
-	}
-
-	BroadcastReceiver mPackageBroadcastReciever = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			mAppHelper.loadApplications(false);
-		}
-	};
-
-	// Just some junk I was investigating
-	// private void setupTestReceiver() {
-	// BroadcastReceiver receiver = new BroadcastReceiver() {
-	// @Override
-	// public void onReceive(Context context, Intent intent) {
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// Log.d("Launcher", "********((((((");
-	// }
-	// };
-	// IntentFilter filter = new IntentFilter();
-	// filter.addAction("com.google.glass.LOG_HEAD_GESTURE");
-	// filter.addAction("android.intent.action.ACTION_POWER_CONNECTED");
-	// filter.addAction("com.google.glass.action.TOUCH_GESTURE"); //not working? wtf... said, I was
-	// hoping to be able to itnercept this, nothing in logs
-	// registerReceiver(receiver, filter);
-	// }
+    @Override
+    protected void onDestroy() {
+        if (appHelper != null) appHelper.onDestroy();
+        super.onDestroy();
+    }
 }

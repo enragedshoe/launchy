@@ -1,93 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mikedg.android.glass.launchy"
-    android:versionCode="1"
-    android:versionName="1.0" >
-
-    <uses-sdk
-        android:minSdkVersion="14"
-        android:targetSdkVersion="14" />
-
-    <!-- For custom voice command showing up in the Ok, Glass menu -->
-    <uses-permission android:name="com.google.android.glass.permission.DEVELOPMENT" />
+    xmlns:tools="http://schemas.android.com/tools">
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/GlassTheme" >
-        <!-- <activity 
-            android:name="com.mikedg.android.glass.launchy.MainActivity"
-            android:label="@string/app_name" android:clearTaskOnLaunch="true" android:launchMode="singleInstance">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.google.glass.action.ACTION_GO_TO_SETTINGS" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity> -->
-        <!-- Think this needs to be a seperate activity from other filters? -->
+        android:supportsRtl="true"
+        android:theme="@style/GlassTheme"
+        tools:ignore="DataExtractionRules">
         <activity
             android:name="com.mikedg.android.glass.launchy.MainActivity"
-            android:label="@string/app_name" android:clearTaskOnLaunch="true" android:launchMode="singleInstance">
+            android:clearTaskOnLaunch="true"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:screenOrientation="landscape"
+            tools:ignore="DiscouragedApi">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="com.google.android.glass.category.DIRECTORY" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.google.glass.action.ACTION_GO_TO_SETTINGS" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
             </intent-filter>
-            <intent-filter>
-                <action
-                    android:name="com.google.android.glass.action.VOICE_TRIGGER" />
-            </intent-filter>
-            <meta-data android:name="com.google.android.glass.VoiceTrigger"
-                       android:resource="@xml/voice_trigger" />
-        </activity>
-        <!--<receiver android:name=".LongPressBroadcastReceiver" >-->
-            <!--<intent-filter android:priority="1000" >-->
-                <!-- Replaces normal, long press to Google, if this is a launcher, it's basically a system app -->
-                <!-- broke in XE11 -->
-            <!--<action android:name="com.google.glass.action.LONG_PRESS" />-->
-            <!--</intent-filter>-->
-        <!--</receiver>-->
-        <activity android:name="com.mikedg.android.glass.launchy.LaunchActivity" android:clearTaskOnLaunch="true" android:launchMode="singleInstance">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW"/>
-				<category android:name="android.intent.category.BROWSABLE"/>
-				<category android:name="android.intent.category.DEFAULT"/>
-				<data android:scheme="launchy"/>
-			</intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="youtube"/>
-            </intent-filter>
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.VIEW" />-->
-                <!--<category android:name="android.intent.category.DEFAULT" />-->
-                <!--<category android:name="android.intent.category.BROWSABLE" />-->
-                <!--<data android:scheme="http"  android:host="*.youtube.com" android:pathPrefix="/watch" />-->
-                <!--<data android:scheme="https" android:host="*.youtube.com" android:pathPrefix="/watch" />-->
-            <!--</intent-filter>-->
-            <!-- above, works, at least via command line specifying all pieces of browsable and default -->
-            <!-- cant ever get below working so tried to change it a bit -->
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.VIEW" />-->
-                <!--<data android:scheme="http"  android:host="*.youtube.com" android:pathPrefix="/watch" />-->
-                <!--<data android:scheme="https" android:host="*.youtube.com" android:pathPrefix="/watch" />-->
-            <!--</intent-filter>-->
-            <intent-filter android:priority="100">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:scheme="sausage" />
-            </intent-filter>
+            <meta-data
+                android:name="com.google.android.glass.VoiceTrigger"
+                android:resource="@xml/voice_trigger" />
         </activity>
     </application>
 </manifest>

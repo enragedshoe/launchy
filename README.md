@@ -3,6 +3,24 @@ launchy
 
 A way to launch native apps on Google Glass.
 
+## EE2 fork
+
+This checkout is adapted for Glass Enterprise Edition 2. It uses the stock EE2
+`DIRECTORY` category, targets Android 8.1+, and removes the obsolete XE-era
+Glass Settings shortcut and URL interception. The app label is **Apps**.
+
+Build from this directory with the shared Android wrapper:
+
+```bash
+ANDROID_HOME=/usr/lib/android-sdk \
+  ../codex-glass/android/gradlew -p . lintDebug assembleDebug
+```
+
+The remaining instructions below describe the original Explorer Edition/XE
+workflow and are retained only as upstream history.
+
+## Original XE instructions
+
 - Build and deploy Launchy to your Glass device
 - Scroll over to settings in GlassHome and select that. You should get a typical Android dialog that gives you the option of picking GlassHome or Launchy for this action. Select Launchy and check the box to always use Launchy.
 - Edit: removed in XE12, due to the selection dialog breaking. Now whenever you go to Settings in GlassHome, Launchy will pop up. If you actually need to get to Glass settings, Launchy provides a permanent link for that.

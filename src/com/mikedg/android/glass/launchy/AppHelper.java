@@ -17,7 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.util.Log;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +68,11 @@ public class AppHelper {
         mfilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
         mfilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         mfilter.addDataScheme("package");
-        mActivity.registerReceiver(mApplicationsReceiver, mfilter);
+        if (Build.VERSION.SDK_INT >= 33) {
+            mActivity.registerReceiver(mApplicationsReceiver, mfilter, Context.RECEIVER_EXPORTED);
+        } else {
+            mActivity.registerReceiver(mApplicationsReceiver, mfilter);
+        }
     }
 
     /**
@@ -107,14 +112,9 @@ public class AppHelper {
             }
             mApplications.clear();
 
-            // Create a launcher for Glass Settings or we have no way to hit that
-            createGlassSettingsAppInfo();
-
             for (int i = 0; i < count; i++) {
                 ApplicationInfo application = new ApplicationInfo();
                 ResolveInfo info = apps.get(i);
-                Log.d("Launchyi", info.activityInfo.applicationInfo.packageName);
-                // Let's filter out this app
                 if (!mExcludedApps.contains(info.activityInfo.applicationInfo.packageName)) {
                     application.title = info.loadLabel(manager);
                     application.setActivity(new ComponentName(
@@ -131,18 +131,6 @@ public class AppHelper {
             // PackageManagerclearPackagePreferredActivities in special case
             // This needs to always be last?
         }
-    }
-
-    private void createGlassSettingsAppInfo() {
-        ApplicationInfo application = new ApplicationInfo();
-
-        application.title = "Glass Settings";
-        application.setActivity(new ComponentName("com.google.glass.home",
-                "com.google.glass.home.settings.SettingsActivity"),
-                Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-        // application.icon = info.activityInfo.loadIcon(manager);
-
-        mApplications.add(application);
     }
 
     /**
@@ -269,7 +257,13 @@ public class AppHelper {
     private class ApplicationLauncher implements AdapterView.OnItemClickListener {
         public void onItemClick(AdapterView parent, View v, int position, long id) {
             ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
-            mActivity.startActivity(app.intent);
+            try {
+                mActivity.startActivity(app.intent);
+            } catch (ActivityNotFoundException error) {
+                Toast.makeText(mActivity, "App is unavailable", Toast.LENGTH_SHORT).show();
+                loadApplications(false);
+                bindApplications();
+            }
         }
     }
 

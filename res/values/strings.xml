@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Launchy</string>
-    <string name="launch">Launch... </string>
-    <string name="voice_menu_trigger">start launchy</string>
+    <string name="app_name">Apps</string>
+    <string name="launch">Open </string>
+    <string name="voice_menu_trigger">open apps</string>
 
 </resources>
